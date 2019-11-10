@@ -7,17 +7,13 @@ EOM
 	exit 0
 }
 
-# Option -h dispays usage message
-[ -h $1 ] && { usage; }
-# If not exactly 2 args show usage.
-[ $# -ne 2 ] && { usage; }
-
-# START_SCRIPT
+# Option -h dispays usage message and if not exactly 2 args promps error.
+[[ $1 == -h ]] && { usage; } || [ $# -ne 2 ] && { echo "Wrong number of arguments."; usage; }
 
 # Save input dir and output dir removing trailing /
 INDIR=`realpath -s $1`
 OUTDIR=`realpath -s $2`
-TEMPDIR=$OUTDIR/temp'
+TEMPDIR=$OUTDIR/temp
 echo "Input dir = ${INDIR}"
 echo "Output dir = ${OUTDIR}"
 # Creates OUTDIR if it doesn't exists
@@ -36,6 +32,14 @@ else
 fi
 # Removes white spaces and strange characters from filenames
 detox -r $INDIR
+
+# Finds number of images in subfolders
+N_IMG=`find "${INDIR}" -maxdepth 2 -type f -regex ".*.[jpg|jpeg]" | wc -l`
+echo "Found ${N_IMG} images."
+# Finds number of digit to use to pad numbers
+N_DIGIT=${#N_IMG}
+
+echo "Preparing files for compression..."
 # Initialises counter to number each page (first page is number 1)
 COUNT=1
 # Lists all first level dirs sorted with version number sort (change sort options if something different is required)
@@ -43,22 +47,21 @@ COUNT=1
 for DIRNAME in `find "${INDIR}" -maxdepth 1 -type d | sort -V`;
 do
 	# Iterates over filenames of images in sorted numerical order, inside DIRNAME
-	for FILENAME in `find "${DIRNAME}" -maxdepth 1 -type f -name "*.jpg" | sort -V`;
+	for FILENAME in `find "${DIRNAME}" -maxdepth 1 -type f -regex ".*.[jpg|jpeg]" | sort -V`;
 	do
 		# Copy and rename images inside TEMPDIR. Change 'cp' to 'mv' in order to delete original files.
-		# Adjust zero padding accordingly: '%05d' is a 5 digit integer. Increase 5 to 6,7.. if necessary.
-		cp "${FILENAME}" "${TEMPDIR}/`printf \"%05d\" ${COUNT}`.${FILENAME##*.}"
+		# Also applies zero padding as necessary (e.g. 1.jpg -> 0001.jpg)
+		cp "${FILENAME}" "${TEMPDIR}/`printf \"%0${N_DIGIT}d\" ${COUNT}`.${FILENAME##*.}"
 		# Next page will have increasing number.
 		COUNT=`expr $COUNT + 1`
 	done
 done
-echo "Generated ${COUNT} files."
-echo "Generating cbz archive...could take time..."
+COUNT=`expr $COUNT - 1`
+echo "Done."
+echo "Generating cbz archive with ${COUNT} images...can take time..."
 # Produce archive with all files in dir. '-j' discard original folder structure
 zip -j -q $OUTDIR/my_archive.cbz $TEMPDIR/*
 rm -rf $TEMPDIR
 echo "Produced cbz file."
 # Opens output in file manager. Comment if desired.
-xdg-open $OUTDIR &
-
-# END_SCRIPT
+# xdg-open $OUTDIR &
