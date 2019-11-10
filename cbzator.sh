@@ -15,10 +15,9 @@ EOM
 # START_SCRIPT
 
 # Save input dir and output dir removing trailing /
-# !NOTE: DO NOT give path with spaces inside as OUTDIR (second arg)
 INDIR=`realpath -s $1`
 OUTDIR=`realpath -s $2`
-TEMPDIR=$OUTDIR/temp
+TEMPDIR=$OUTDIR/temp'
 echo "Input dir = ${INDIR}"
 echo "Output dir = ${OUTDIR}"
 # Creates OUTDIR if it doesn't exists
