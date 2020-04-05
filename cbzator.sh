@@ -38,27 +38,26 @@ createArchive () {
 	echo "Preparing files for compression..."
 	# Initialises counter to number each page (first page is number 1)
 	local COUNT=1
-	# Lists all first level dirs sorted with version number sort (change sort options if something different is required)
+	# Lists all first level dirs sorted with version number sort
 	# This command should return directories in the order in which they should be analyzed in order to produce the correct order of pages
-	# Use process substitution
 	while IFS= read -r -d '' DIRNAME; do
-		echo "Dir: $DIRNAME"
+		# Lists all first level files in every directory and returns them one by one in the correct order
 		while IFS= read -r -d '' FILENAME; do
-			echo "File: $FILENAME"
-			# Copy and rename images inside TEMPDIR. Change 'cp' to 'mv' in order to delete original files.
+			# Copies and renames images inside TEMPDIR. Change 'cp' to 'mv' in order to delete original files.
 			# Also applies zero padding as necessary (e.g. 1.jpg -> 0001.jpg)
 			# Extension will be lowercase (e.g. JPG -> jpg)
 			EXT=${FILENAME##*.}
 			cp "${FILENAME}" "${TEMPDIR}/`printf \"%0${N_DIGIT}d\" ${COUNT}`.${EXT,,}"
 			# Next page will have increasing number.
 			COUNT=`expr $COUNT + 1`
+			# I used process substitution to update COUNT correctly
 		done< <(find "$DIRNAME" -maxdepth 1 -type f -regex $FILE_PATTERN -print0 | sort -z -V)
 	done< <(find "$INDIR" -maxdepth 1 -type d -print0 | sort -z -V)
 
 	COUNT=`expr $COUNT - 1`
 	echo "Done."
 	echo "Generating cbz archive with $COUNT images...can take time..."
-	# Produce archive with all files in dir. '-j' discard original folder structure
+	# Produces archive with all files in dir. '-j' discard original folder structure
 	zip -j -q $OUTDIR/$OUT_NAME $TEMPDIR/*
 	rm -rf $TEMPDIR
 	echo "Produced cbz file."
@@ -68,16 +67,18 @@ createArchive () {
 
 if [ "$1" == "-h" ]
 then
+	# HELP MODE
 	usage;
 	exit 0
 elif [ "$1" == "-m" ] || [ "$1" == "--merge" ]
 then
+	# MERGE MODE
 	[ $# -ne 3 ] && { echo "Error: wrong number of arguments."; usage; exit 1; }
 	[ ! -f "$2" ] && { echo "Error: merge option require the target archive in second parameter."; usage; exit 1; }
 	INDIR=`realpath -s "$3"`
 	[ ! -d "$INDIR" ] && { echo "Error: $INDIR is not a valid input directory."; exit 1; }
 	echo "Merging $2 with $INDIR..."
-	# Take directory of archive to merge
+	# Takes the directory of the archive to merge
 	OUTDIR=`realpath -s $(dirname "$2")`
 	TEMPDIR=$OUTDIR/tmpfolder
 	TEMPDIR1=$TEMPDIR/tmp1
@@ -86,24 +87,26 @@ then
 	if [ ! -d "$TEMPDIR2" ]; then mkdir --parents $TEMPDIR2; else rm -rf $TEMPDIR2/*; fi
 	# Unzip all archive files into tmp1
 	unzip -j -q $2 -d $TEMPDIR1
-	# Move every file to add in tmp2
+	# Moves every file to add in tmp2
 	find "$INDIR" -mindepth 1 -maxdepth 2 -type f -regex $FILE_PATTERN -print0 | sort -V | \
 		while IFS= read -r -d '' FILENAME; do
 			cp "$FILENAME" $TEMPDIR2
 		done
+	# Creates the cbz file
 	createArchive "$TEMPDIR" "$OUTDIR"
-	# Delete tmp folder
+	# Deletes tmp folder
 	rm -rf $TEMPDIR
 	exit 0
 elif [ $# -eq 2 ]
 then
+	# CREATION MODE
 	INDIR=`realpath -s "$1"`
 	[ ! -d "$INDIR" ] && { echo "Error: $INDIR is not a valid input directory."; exit 1; }
 	OUTDIR=`realpath -s "$2"`
 	# Creates OUTDIR if it doesn't exists
 	if [ ! -d "$OUTDIR" ]; then mkdir --parents $OUTDIR;
 	else
-		# Ask for confirmation if the output file already exists
+		# Asks for confirmation if the output file already exists
 		if [ -f "$OUTDIR/$OUT_NAME" ]
 		then
 			echo "Warning: output file '$OUTDIR/$OUT_NAME' is already present and will be deleted."
@@ -119,7 +122,7 @@ then
 			fi
 		fi
 	fi
-
+	# Creates the cbz file
 	createArchive "$INDIR" "$OUTDIR"
 	exit 0
 else
