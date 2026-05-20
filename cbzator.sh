@@ -110,7 +110,7 @@ then
 		# Asks for confirmation if the output file already exists
 		if [ -f "$OUTDIR/$OUT_NAME" ]
 		then
-			echo "Warning: output file $OUTDIR/$OUT_NAME is already present and will be deleted."
+			echo "Warning: output file '$OUTDIR/$OUT_NAME' is already present and will be deleted."
 			read -p "Do you want this to happen (y/n)? Press 'n' to abort. " -n 1 -r
 			if [[ $REPLY =~ ^[Yy]$ ]]
 			then
