@@ -22,10 +22,10 @@ createArchive () {
 	# Creates a temp/ folder inside OUTDIR if it does not exist, otherwise empties it.
 	if [ ! -d "$TEMPDIR" ]
 	then
-		mkdir $TEMPDIR
+		mkdir "$TEMPDIR"
 	else
 		echo "Warning: deleting ${TEMPDIR} content..."
-		rm -rf $TEMPDIR/*
+		rm -rf "$TEMPDIR/*"
 		echo "Warning: ${TEMPDIR} already existed and content has been deleted."
 	fi
 
@@ -58,8 +58,8 @@ createArchive () {
 	echo "Done."
 	echo "Generating cbz archive with $COUNT images...can take time..."
 	# Produces archive with all files in dir. '-j' discard original folder structure
-	zip -j -q $OUTDIR/$OUT_NAME $TEMPDIR/*
-	rm -rf $TEMPDIR
+	zip -j -q "$OUTDIR/$OUT_NAME" "$TEMPDIR/"*
+	rm -rf "$TEMPDIR"
 	echo "Produced cbz file."
 	# Opens output in file manager. Uncomment if desired.
 	# xdg-open $OUTDIR &
@@ -80,36 +80,37 @@ then
 	echo "Merging $2 with $INDIR..."
 	# Takes the directory of the archive to merge
 	OUTDIR=`realpath -s $(dirname "$2")`
-	TEMPDIR=$OUTDIR/tmpfolder
+	TEMPDIR="$OUTDIR/tmpfolder"
 	TEMPDIR1=$TEMPDIR/tmp1
 	TEMPDIR2=$TEMPDIR/tmp2
-	if [ ! -d "$TEMPDIR1" ]; then mkdir --parents $TEMPDIR1; else rm -rf $TEMPDIR1/*; fi
-	if [ ! -d "$TEMPDIR2" ]; then mkdir --parents $TEMPDIR2; else rm -rf $TEMPDIR2/*; fi
+	if [ ! -d "$TEMPDIR1" ]; then mkdir --parents "$TEMPDIR1"; else rm -rf "$TEMPDIR1/*"; fi
+	if [ ! -d "$TEMPDIR2" ]; then mkdir --parents "$TEMPDIR2"; else rm -rf "$TEMPDIR2/*"; fi
 	# Unzip all archive files into tmp1
-	unzip -j -q $2 -d $TEMPDIR1
+	unzip -j -q $2 -d "$TEMPDIR1"
 	# Moves every file to add in tmp2
 	find "$INDIR" -mindepth 1 -maxdepth 2 -type f -regex $FILE_PATTERN -print0 | sort -V | \
 		while IFS= read -r -d '' FILENAME; do
-			cp "$FILENAME" $TEMPDIR2
+			cp "$FILENAME" "$TEMPDIR2"
 		done
 	# Creates the cbz file
 	createArchive "$TEMPDIR" "$OUTDIR"
 	# Deletes tmp folder
-	rm -rf $TEMPDIR
+	rm -rf "$TEMPDIR"
 	exit 0
 elif [ $# -eq 2 ]
 then
 	# CREATION MODE
 	INDIR=`realpath -s "$1"`
 	[ ! -d "$INDIR" ] && { echo "Error: $INDIR is not a valid input directory."; exit 1; }
+	OUT_NAME="$(basename "$INDIR").cbz"
 	OUTDIR=`realpath -s "$2"`
 	# Creates OUTDIR if it doesn't exists
-	if [ ! -d "$OUTDIR" ]; then mkdir --parents $OUTDIR;
+	if [ ! -d "$OUTDIR" ]; then mkdir --parents "$OUTDIR";
 	else
 		# Asks for confirmation if the output file already exists
 		if [ -f "$OUTDIR/$OUT_NAME" ]
 		then
-			echo "Warning: output file '$OUTDIR/$OUT_NAME' is already present and will be deleted."
+			echo "Warning: output file $OUTDIR/$OUT_NAME is already present and will be deleted."
 			read -p "Do you want this to happen (y/n)? Press 'n' to abort. " -n 1 -r
 			if [[ $REPLY =~ ^[Yy]$ ]]
 			then
